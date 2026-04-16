@@ -1,0 +1,22 @@
+# Dependências
+node_modules/
+
+# Compilação
+dist/
+
+# Variáveis de Ambiente (CRÍTICO: Nunca subir chaves de API)
+.env
+!.env.example
+
+# Arquivos Temporários de Mídia
+# Vamos criar uma pasta /temp para os áudios baixados
+temp/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema/IDE
+.vscode/
+.DS_Store
+Thumbs.db
