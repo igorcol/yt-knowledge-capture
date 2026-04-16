@@ -9,7 +9,7 @@ import { SynthesisSchema, type ISynthesis } from "../types/schema.js";
 export class SynthesisService {
   private static genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
   private static model = this.genAI.getGenerativeModel({
-    model: "gemini-3-flash",
+    model: "gemini-3-flash-preview",
     // Configura o modelo para sempre responder em JSON
     generationConfig: {
       responseMimeType: "application/json",
