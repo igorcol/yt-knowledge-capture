@@ -29,9 +29,12 @@ export class VideoService {
       await execPromise(command);
       console.log(`[VideoService] Download concluído: ${outputPath}`);
       return outputPath;
-    } catch (error) {
-      console.error(`[VideoService] Erro ao baixar vídeo:`, error);
-      throw new Error("Falha na extração de áudio do YouTube.");
+    } catch (error: any) {
+      const errorMessage = error.stderr || error.message;
+      console.error(`[VideoService] Erro do yt-dlp: ${errorMessage}`);
+      throw new Error(
+        "Falha na extração de áudio: O vídeo pode ser muito novo ou estar indisponível.",
+      );
     }
   }
 }
