@@ -15,43 +15,23 @@ export class StorageService {
   ): Promise<string> {
     const fileName = `${StringHelper.sanitizeFilename(synthesis.title)}.md`;
     const fullPath = path.join(env.OBSIDIAN_VAULT_PATH, fileName);
-
     const date = new Date().toISOString().split("T")[0];
 
-    // Template do OBSIDIAN (Markdown + Metadata)
-    const content = `---
+    // Agora o template é apenas os Metadados + o Conteúdo que a IA gerou
+    const fileContent = `---
 source: ${sourceUrl}
 date: ${date}
-type: Learning/YouTube
+tags: ${synthesis.tags.join(", ")}
 status: #processed
 ---
 
-# ${synthesis.title}
-
-> [!ABSTRACT] Grande Ideia
-> ${synthesis.summary}
+${synthesis.content}
 
 ---
-
-## 🧠 Pilares do Conhecimento
-${synthesis.pillars.map((p) => `### ${p.concept}\n${p.explanation}`).join("\n\n")}
-
----
-
-## 🛠️ Ações Práticas
-${synthesis.actionItems.map((item) => `- [ ] ${item}`).join("\n")}
-
----
-*Gerado automaticamente pelo ecossistema C.A.O.S. em ${date}*
+*Gerado via C.A.O.S. Learn Scrip em ${date}*
 `;
 
-    try {
-      await fs.mkdir(env.OBSIDIAN_VAULT_PATH, { recursive: true });
-      await fs.writeFile(fullPath, content, "utf-8");
-      return fullPath;
-    } catch (error) {
-      console.error(`[StorageService] Erro ao salvar no Obsidian:`, error);
-      throw new Error("Falha na persistência dos dados no Second Brain.");
-    }
+    await fs.writeFile(fullPath, fileContent, "utf-8");
+    return fullPath;
   }
 }
