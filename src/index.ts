@@ -2,7 +2,7 @@
 import fs from 'node:fs/promises';
 import readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
-import { env } from './config.js'; // Importando o env para os logs
+import { env } from './config.js';
 import { VideoService } from './services/VideoService.js';
 import { TranscriptionService } from './services/TranscriptionService.js';
 import { SynthesisService } from './services/SynthesisService.js';
@@ -30,7 +30,7 @@ async function run() {
 
   // --- FRUFUZINHO TÉCNICO (HEADER) ---
   console.log('\n' + '═'.repeat(50));
-  console.log('  C.A.O.S. LEARNING ENGINE v1.2');
+  console.log('  C.A.O.S. LEARNING ENGINE v1.0');
   console.log('  ' + '─'.repeat(46));
   console.log(`  🎯 TARGET: ${url}`);
   console.log(`  🧠 BRAIN : ${env.GEMINI_MODEL} (${env.GEMINI_API_VERSION})`);
@@ -42,13 +42,22 @@ async function run() {
   // TELEMETRIA: Timer Global
   console.time('⏱️  Tempo Total de Processamento');
 
+  // Variáveis no escopo global para o 'finally' ter acesso
   let audioPath: string | null = null;
+  let videoTitle = "";
+  let channelName = "";
 
   try {
     // FASE 1: EXTRAÇÃO (The Ears)
     console.time('   [Phase 1] Extração de Áudio');
-    audioPath = await VideoService.downloadAudio(url);
+    const videoData = await VideoService.downloadAudio(url);
+    
+    audioPath = videoData.audioPath;
+    videoTitle = videoData.title;
+    channelName = videoData.channel;
+    
     console.timeEnd('   [Phase 1] Extração de Áudio');
+    console.log(`      └─ Vídeo: "${videoTitle}" (por ${channelName})`);
 
     // FASE 2: TRANSCRIÇÃO (The Senses)
     console.time('   [Phase 2] Transcrição');
@@ -60,11 +69,11 @@ async function run() {
     console.time('   [Phase 3] Síntese Cognitiva');
     const synthesis = await SynthesisService.synthesize(transcript.text);
     console.timeEnd('   [Phase 3] Síntese Cognitiva');
-    console.log(`      └─ Insight: "${synthesis.title}"`);
+    console.log(`      └─ Insight: "${synthesis.summary}"`); // Usando o summary agora
 
     // FASE 4: PERSISTÊNCIA (The Memory)
     console.time('   [Phase 4] Escrita no Obsidian');
-    const finalPath = await StorageService.saveToObsidian(synthesis, url);
+    const finalPath = await StorageService.saveToObsidian(synthesis, url, videoTitle, channelName);
     console.timeEnd('   [Phase 4] Escrita no Obsidian');
     
     // RESULTADO FINAL
@@ -80,10 +89,9 @@ async function run() {
     console.error('  ' + '─'.repeat(46));
     console.error(`  > Motivo: ${error.message || error}`);
     console.error('╘' + '═'.repeat(48) + '╛');
-    //process.exit(1); // Segue para apagar o temp
   } 
   finally {
-    // Ofinally SEMPRE será executado, mesmo após um erro .
+    // O finally SEMPRE será executado, mesmo após um erro.
     if (audioPath) {
       try {
         await fs.unlink(audioPath);
@@ -95,6 +103,5 @@ async function run() {
     console.log('\n'); 
   }
 }
-
 
 run();

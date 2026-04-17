@@ -9,27 +9,32 @@ import type { ISynthesis } from "../types/schema.js";
 */
 
 export class StorageService {
+  // Agora recebemos o title e o channel do vídeo
   static async saveToObsidian(
     synthesis: ISynthesis,
-    sourceUrl: string,
+    url: string,
+    videoTitle: string,
+    channelName: string,
   ): Promise<string> {
-    const fileName = `${StringHelper.sanitizeFilename(synthesis.title)}.md`;
+    const fileName = `${StringHelper.sanitizeFilename(videoTitle)}.md`;
     const fullPath = path.join(env.OBSIDIAN_VAULT_PATH, fileName);
     const date = new Date().toISOString().split("T")[0];
 
-    // Agora o template é apenas os Metadados + o Conteúdo que a IA gerou
     const fileContent = `---
-source: ${sourceUrl}
-date: ${date}
-tags: ${synthesis.tags.join(", ")}
-status: #processed
----
+                        source: ${url}
+                        author: ${channelName}
+                        date: ${date}
+                        tags: ${synthesis.tags.join(", ")}
+                        status: #processed
+                        ---
 
-${synthesis.content}
+                        # 🧠 ${videoTitle}
 
----
-*Gerado via C.A.O.S. Learn Scrip em ${date}*
-`;
+                        ${synthesis.content}
+
+                        ---
+                        *Gerado via C.A.O.S. Learning Engine em ${date}*
+                        `;
 
     await fs.writeFile(fullPath, fileContent, "utf-8");
     return fullPath;

@@ -38,35 +38,34 @@ export class SynthesisService {
 
       // Prompt Reforçado: Forçamos a IA a entender que o Markdown mora dentro do JSON
       const prompt = `
-        EXECUTE O PROTOCOLO DE DESTILAÇÃO 80/20.
-        
-        REGRAS DE FORMATO (ESTRITAMENTE OBRIGATÓRIO):
-        1. Retorne um OBJETO JSON ÚNICO.
-        2. O campo "content" deve conter TODO o corpo da nota formatado em Markdown rico (Callouts, Negritos, Seções) conforme sua persona.
-        3. O campo "tags" deve ser um array de strings.
-        4. O campo "summary" deve ser a Grande Ideia em uma frase.
+  EXECUTE O PROTOCOLO DE DESTILAÇÃO 80/20.
+  
+  REGRAS DE FORMATO (ESTRITAMENTE OBRIGATÓRIO):
+  1. Retorne um OBJETO JSON ÚNICO.
+  2. O campo "content" deve conter TODO o corpo da nota formatado em Markdown rico. Não coloque um título <h1> (#) no topo do content, pois o sistema já fará isso.
+  3. O campo "tags" deve ser um array de strings.
+  4. O campo "summary" deve ser a Grande Ideia em uma frase.
 
-        TRANSCRIÇÃO PARA PROCESSAR:
-        "${transcriptText}"
+  TRANSCRIÇÃO PARA PROCESSAR:
+  "${transcriptText}"
 
-        ESTRUTURA DO JSON ESPERADA:
-        {
-          "title": "Título Disruptivo",
-          "summary": "Frase de alto impacto",
-          "tags": ["tag1", "tag2"],
-          "content": "Corpo completo em Markdown aqui..."
-        }
-      `;
+  ESTRUTURA DO JSON ESPERADA:
+  {
+    "summary": "Frase de alto impacto",
+    "tags": ["tag1", "tag2"],
+    "content": "Corpo completo em Markdown aqui..."
+  }
+`;
 
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       const responseText = response.text();
 
       // --- BLINDAGEM C.A.O.S. ---
-      
+
       // 1. Extração via Regex (Captura o maior bloco de chaves possível)
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-      
+
       if (!jsonMatch) {
         console.error("--- DEBUG: FALHA NO PARSE ---");
         console.log(responseText);
@@ -82,7 +81,6 @@ export class SynthesisService {
 
       // 3. Validação final via Zod
       return SynthesisSchema.parse(parsedData);
-
     } catch (error: any) {
       // Log limpo para o usuário, mas detalhado para o erro
       throw new Error(`Erro na síntese neural: ${error.message}`);

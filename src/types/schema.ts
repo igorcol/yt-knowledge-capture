@@ -2,7 +2,6 @@
 import { z } from 'zod';
 
 export const SynthesisSchema = z.object({
-  title: z.string(),
   summary: z.string(),
   tags: z.array(z.string()),
   // Corpo da nota completo e formatado
