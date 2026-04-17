@@ -2,6 +2,7 @@
 import fs from 'node:fs/promises';
 import readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
+import { env } from './config.js'; // Importando o env para os logs
 import { VideoService } from './services/VideoService.js';
 import { TranscriptionService } from './services/TranscriptionService.js';
 import { SynthesisService } from './services/SynthesisService.js';
@@ -14,14 +15,11 @@ import { StorageService } from './services/StorageService.js';
 async function run() {
   let url = process.argv[2];
 
-  // LOGIC: Gatilho Híbrido (Argumento ou Prompt)
   if (!url) {
     const rl = readline.createInterface({ input, output });
-    
     console.log('\n🫙  Nenhuma URL detectada no comando.');
     const answer = await rl.question('🔗 Cole a URL do YouTube aqui: ');
     url = answer.trim();
-    
     rl.close();
 
     if (!url) {
@@ -30,8 +28,16 @@ async function run() {
     }
   }
 
-  console.log('\n🏗️  Iniciando Pipeline C.A.O.S...');
-  console.log('—'.repeat(50));
+  // --- FRUFUZINHO TÉCNICO (HEADER) ---
+  console.log('\n' + '═'.repeat(50));
+  console.log('  C.A.O.S. LEARNING ENGINE v1.2');
+  console.log('  ' + '─'.repeat(46));
+  console.log(`  🎯 TARGET: ${url}`);
+  console.log(`  🧠 BRAIN : ${env.GEMINI_MODEL} (${env.GEMINI_API_VERSION})`);
+  console.log(`  🎙️  EARS  : Whisper V3 (Groq API)`);
+  console.log('═'.repeat(50) + '\n');
+
+  console.log('🏗️  Iniciando Pipeline...');
   
   // TELEMETRIA: Timer Global
   console.time('⏱️  Tempo Total de Processamento');
@@ -45,16 +51,16 @@ async function run() {
     console.timeEnd('   [Phase 1] Extração de Áudio');
 
     // FASE 2: TRANSCRIÇÃO (The Senses)
-    console.time('   [Phase 2] Transcrição (Groq Whisper V3)');
+    console.time('   [Phase 2] Transcrição');
     const transcript = await TranscriptionService.transcribe(audioPath);
-    console.timeEnd('   [Phase 2] Transcrição (Groq Whisper V3)');
-    console.log(`      └─ Volume: ${transcript.text.length} caracteres processados.`);
+    console.timeEnd('   [Phase 2] Transcrição');
+    console.log(`      └─ Volume: ${transcript.text.length} caracteres.`);
 
     // FASE 3: SÍNTESE (The Brain)
-    console.time('   [Phase 3] Síntese Cognitiva (Gemini 3 Flash)');
+    console.time('   [Phase 3] Síntese Cognitiva');
     const synthesis = await SynthesisService.synthesize(transcript.text);
-    console.timeEnd('   [Phase 3] Síntese Cognitiva (Gemini 3 Flash)');
-    console.log(`      └─ Inteligência: "${synthesis.title}"`);
+    console.timeEnd('   [Phase 3] Síntese Cognitiva');
+    console.log(`      └─ Insight: "${synthesis.title}"`);
 
     // FASE 4: PERSISTÊNCIA (The Memory)
     console.time('   [Phase 4] Escrita no Obsidian');
@@ -62,29 +68,33 @@ async function run() {
     console.timeEnd('   [Phase 4] Escrita no Obsidian');
     
     // RESULTADO FINAL
-    console.log('—'.repeat(50));
+    console.log('\n' + '═'.repeat(50));
     console.log(`✅ FLUXO CONCLUÍDO COM SUCESSO!`);
     console.log(`📂 Nota salva em: ${finalPath}`);
     console.timeEnd('⏱️  Tempo Total de Processamento');
-    console.log('—'.repeat(50));
+    console.log('═'.repeat(50));
 
   } catch (error: any) {
-    console.error('\n💥 FALHA CRÍTICA NO PIPELINE:');
-    console.error(`   > Motivo: ${error.message || error}`);
-    process.exit(1);
-  } finally {
-    // FASE 5: HIGIENE (Cleanup)
+    console.error('\n' + '╒' + '═'.repeat(48) + '╕');
+    console.error('  💥 FALHA CRÍTICA NO PIPELINE');
+    console.error('  ' + '─'.repeat(46));
+    console.error(`  > Motivo: ${error.message || error}`);
+    console.error('╘' + '═'.repeat(48) + '╛');
+    //process.exit(1); // Segue para apagar o temp
+  } 
+  finally {
+    // Ofinally SEMPRE será executado, mesmo após um erro .
     if (audioPath) {
       try {
         await fs.unlink(audioPath);
-        console.log('🧹 Cache de áudio removido do sistema.');
+        console.log('\n🧹 Cache de áudio removido.');
       } catch (e) {
-        console.warn('⚠️  Aviso: Falha ao limpar arquivo temporário.');
+        // Silencioso se o arquivo já não existir
       }
     }
-    console.log('\n');
+    console.log('\n'); 
   }
 }
 
-// Inicialização do motor
+
 run();
