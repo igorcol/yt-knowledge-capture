@@ -1,64 +1,90 @@
+// src/services/SynthesisService.ts
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { env } from "../config.js";
 import { SynthesisSchema, type ISynthesis } from "../types/schema.js";
 import { PERSONA_PROMPT } from "../../PROMPTS.js";
 
 /*
-    Recebe a transcrição do video e gera um resumo tático com a persona dada.
+    C.A.O.S. Synthesis Service - Protocolo de Destilação Neural
 */
 
 export class SynthesisService {
   private static genAI = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-  
-  // A Persona é o coração do sistema
+
+  // A Persona é o coração do sistema (Mentalidade Stark)
   private static readonly SYSTEM_PROMPT = PERSONA_PROMPT;
 
-  // Inicialização otimizada para v1beta (Resiliência Máxima)
+  // Inicialização Robusta v1beta
   private static model = this.genAI.getGenerativeModel(
-  { 
-    model: env.GEMINI_MODEL,
-    systemInstruction: {
-      role: "system",
-      parts: [{ text: this.SYSTEM_PROMPT }],
+    {
+      model: env.GEMINI_MODEL,
+      systemInstruction: {
+        role: "system",
+        parts: [{ text: this.SYSTEM_PROMPT }],
+      },
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: 0.2,
+      },
     },
-    generationConfig: {
-      responseMimeType: "application/json",
-      temperature: 0.2, 
-    },
-  },
-  { apiVersion: env.GEMINI_API_VERSION as any }
-);
+    { apiVersion: env.GEMINI_API_VERSION as any },
+  );
 
   static async synthesize(transcriptText: string): Promise<ISynthesis> {
     try {
-      console.log(`[SynthesisService] Iniciando compressão cognitiva via ${env.GEMINI_MODEL}...`);
+      console.log(
+        `[SynthesisService] Iniciando compressão cognitiva via ${env.GEMINI_MODEL}...`,
+      );
 
-      const prompt = `Analise e destile a transcrição conforme o protocolo 80/20:\n\n"${transcriptText}"`;
+      // Prompt Reforçado: Forçamos a IA a entender que o Markdown mora dentro do JSON
+      const prompt = `
+        EXECUTE O PROTOCOLO DE DESTILAÇÃO 80/20.
+        
+        REGRAS DE FORMATO (ESTRITAMENTE OBRIGATÓRIO):
+        1. Retorne um OBJETO JSON ÚNICO.
+        2. O campo "content" deve conter TODO o corpo da nota formatado em Markdown rico (Callouts, Negritos, Seções) conforme sua persona.
+        3. O campo "tags" deve ser um array de strings.
+        4. O campo "summary" deve ser a Grande Ideia em uma frase.
+
+        TRANSCRIÇÃO PARA PROCESSAR:
+        "${transcriptText}"
+
+        ESTRUTURA DO JSON ESPERADA:
+        {
+          "title": "Título Disruptivo",
+          "summary": "Frase de alto impacto",
+          "tags": ["tag1", "tag2"],
+          "content": "Corpo completo em Markdown aqui..."
+        }
+      `;
 
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
-      let responseText = response.text();
+      const responseText = response.text();
 
-      // --- BLINDAGEM C.A.O.S. (LIMPEZA DE RESPOSTA) ---
-      // 1. Remove blocos de código Markdown se existirem (```json ... ```)
-      responseText = responseText.replace(/```json/g, '').replace(/```/g, '');
+      // --- BLINDAGEM C.A.O.S. ---
       
-      // 2. Localiza o primeiro '{' e o último '}' para isolar apenas o objeto JSON
-      const firstBrace = responseText.indexOf('{');
-      const lastBrace = responseText.lastIndexOf('}');
+      // 1. Extração via Regex (Captura o maior bloco de chaves possível)
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       
-      if (firstBrace === -1 || lastBrace === -1) {
+      if (!jsonMatch) {
+        console.error("--- DEBUG: FALHA NO PARSE ---");
+        console.log(responseText);
         throw new Error("A IA não retornou um objeto JSON válido.");
       }
-      
-      const cleanedJson = responseText.substring(firstBrace, lastBrace + 1);
 
-      // 3. Parsing e validação via Zod
-      const parsedData = JSON.parse(cleanedJson);
+      let parsedData = JSON.parse(jsonMatch[0]);
+
+      // 2. Desembrulho de Array (Caso o Gemini insista em usar [ ])
+      if (Array.isArray(parsedData)) {
+        parsedData = parsedData[0];
+      }
+
+      // 3. Validação final via Zod
       return SynthesisSchema.parse(parsedData);
-      
+
     } catch (error: any) {
-      // Se for erro de Zod ou JSON, o log será mais limpo
+      // Log limpo para o usuário, mas detalhado para o erro
       throw new Error(`Erro na síntese neural: ${error.message}`);
     }
   }
